@@ -1,7 +1,7 @@
 # app.py
 from fastapi import FastAPI, Request, Response
 from twilio.twiml.messaging_response import MessagingResponse
-from bot import process_incoming_message  # מייבאים את הלוגיקה
+from bot import process_incoming_message
 
 app = FastAPI()
 
@@ -11,7 +11,7 @@ def health():
 
 @app.post("/twilio-webhook")
 async def twilio_webhook(request: Request):
-    form = await request.form()  # Twilio שולחת form-encoded
+    form = await request.form()
     from_number = form.get("From", "")
     body = (form.get("Body") or "").strip()
 
