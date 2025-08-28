@@ -26,11 +26,11 @@ def validate_israeli_number(number: str) -> str | None:
 # --- פונקציה מרכזית לטיפול בהודעות נכנסות ---
 def process_incoming_message(body: str, from_number: str) -> str:
     """
-    כרגע: מחזירים תשובה דמו. 
+    כרגע: מחזירים תשובה דמו.
     בהמשך נוסיף:
     - נרמול שעות בעברית ("נכנס בשתיים" -> 14:00)
-    - עדכון Google Sheets (עם ENV vars)
-    - שליחת הודעה חכמה דרך Twilio
+    - עדכון Google Sheets (דרך ENV vars)
+    - שליחת הודעות חכמות דרך Twilio
     """
     logging.info(f"Incoming message from {from_number}: {body}")
     return f"היי! קיבלתי ממספר {from_number} את: “{body}” ✅"
