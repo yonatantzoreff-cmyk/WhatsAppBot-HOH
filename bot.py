@@ -1,7 +1,6 @@
 # bot.py
 import re
 import logging
-from datetime import datetime, timedelta
 
 logging.basicConfig(
     filename='whatsapp_bot.log',
@@ -9,6 +8,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
+# מילון מספרים בעברית -> מספרים
 HEBREW_NUMBERS = {
     "אחת": 1, "אחד": 1,
     "שתיים": 2, "שניים": 2, "שתים": 2,
@@ -20,7 +20,7 @@ HEBREW_NUMBERS = {
 }
 
 WEEKDAYS = {
-    "ראשון": 6,  # Python: Monday=0, Sunday=6
+    "ראשון": 6,   # Python: Monday=0, Sunday=6
     "שני": 0,
     "שלישי": 1,
     "רביעי": 2,
@@ -32,14 +32,11 @@ WEEKDAYS = {
 def normalize_hebrew_time(text: str) -> str | None:
     """
     מזהה שעות/ימים בביטויים בעברית ומחזיר מחרוזת סטנדרטית.
-    לדוגמה:
-    - 'מחר בשעה 9 בבוקר' -> 'מחר 09:00'
-    - 'יום חמישי ב-20:00' -> 'יום חמישי 20:00'
     """
     text = text.strip()
 
     # --- יום בשבוע ---
-    for heb_day, weekday_idx in WEEKDAYS.items():
+    for heb_day in WEEKDAYS.keys():
         if heb_day in text:
             return f"יום {heb_day} {extract_time(text) or ''}".strip()
 
@@ -51,45 +48,64 @@ def normalize_hebrew_time(text: str) -> str | None:
     if "היום" in text:
         return f"היום {extract_time(text) or ''}".strip()
 
-    # ברירת מחדל: רק שעה
+    # --- ברירת מחדל: רק שעה ---
     hour_part = extract_time(text)
     if hour_part:
         return hour_part
 
     return None
 
+
 def extract_time(text: str) -> str | None:
-    """מחלץ שעה (כולל ספרות + בוקר/ערב)"""
-    # פורמט 24H ישיר (21:15)
+    """מחלץ שעה (כולל ספרות + מילים + בוקר/ערב/צהריים/לילה)"""
+
+    # --- פורמט 24H ישיר (21:15) ---
     match = re.search(r"\b(\d{1,2}):(\d{2})\b", text)
     if match:
         hour = int(match.group(1))
         minute = int(match.group(2))
-        return f"{hour:02d}:{minute:02d}"
+        if 0 <= hour <= 23 and 0 <= minute <= 59:
+            return f"{hour:02d}:{minute:02d}"
 
-    # ספרות בלבד
+    # --- ספרות בלבד ---
     match = re.search(r"\b(\d{1,2})\b", text)
     if match:
         hour = int(match.group(1))
-        # בדיקת "בבוקר" או "בערב"
+
+        # טיפול מיוחד ב-12
+        if hour == 12:
+            if "בצהריים" in text:
+                return "12:00"
+            if "בלילה" in text or "בערב" in text:
+                return "00:00"
+
         if "בבוקר" in text and hour <= 12:
             return f"{hour:02d}:00"
-        if "בערב" in text and hour <= 12:
+        if "בערב" in text and hour < 12:
             return f"{hour+12:02d}:00"
-        # ברירת מחדל: נניח שעות אחר הצהריים
+
         return f"{(hour if hour >= 12 else hour+12):02d}:00"
 
-    # מילים בעברית
+    # --- מילים בעברית ---
     for heb, num in HEBREW_NUMBERS.items():
         if heb in text:
             hour = num
+
+            # טיפול מיוחד ב-12
+            if hour == 12:
+                if "בצהריים" in text:
+                    return "12:00"
+                if "בלילה" in text or "בערב" in text:
+                    return "00:00"
+
             if "בבוקר" in text and hour <= 12:
                 return f"{hour:02d}:00"
-            if "בערב" in text and hour <= 12:
+            if "בערב" in text and hour < 12:
                 return f"{hour+12:02d}:00"
+
             return f"{(hour if hour >= 12 else hour+12):02d}:00"
 
-    # רבע ל-
+    # --- רבע ל- ---
     match = re.search(r"רבע ל(.*)", text)
     if match:
         word = match.group(1).strip()
@@ -97,7 +113,7 @@ def extract_time(text: str) -> str | None:
         if hour:
             return f"{(hour-1 if hour>1 else 12):02d}:45"
 
-    # חצי
+    # --- חצי (שש וחצי) ---
     match = re.search(r"(.*) וחצי", text)
     if match:
         word = match.group(1).strip()
@@ -106,6 +122,7 @@ def extract_time(text: str) -> str | None:
             return f"{(hour if hour>=12 else hour+12):02d}:30"
 
     return None
+
 
 # --- פונקציה ראשית ---
 def process_incoming_message(body: str, from_number: str) -> str:
