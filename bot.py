@@ -92,9 +92,13 @@ for i, row in enumerate(rows, start=2):  # start=2 כי השורה הראשונ�
         print(f"Failed to send to {row.get('name', 'UNKNOWN')} ({raw_number}): {str(e)}")
 
 # bot.py
+import os
+
 def process_incoming_message(body: str, from_number: str) -> str:
     """
-    כאן בעתיד נכניס לוגיקה: נרמול שעות בעברית, זיהוי תאריך, עדכון לשיטס וכו'.
-    בינתיים, דמו פשוט שמחזיר טקסט תשובה.
+    בשלב זה אנחנו רק מחזירים תשובה. בהמשך נוסיף כאן:
+    - נרמול שעות בעברית
+    - עדכון Google Sheets (עם קרדנצ'יאלס מה-ENV)
+    - לוגיקה נוספת
     """
     return f"היי! קיבלתי ממספר {from_number} את: “{body}” ✅"
